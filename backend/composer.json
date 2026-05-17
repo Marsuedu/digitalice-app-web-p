@@ -1,0 +1,29 @@
+{
+  "name": "digitalice/academic-api",
+  "description": "API REST para la plataforma academica DIGITALICE.",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.4",
+    "slim/slim": "^4.14",
+    "slim/psr7": "^1.7",
+    "zircote/swagger-php": "^4.11"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "DigitalIce\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "DigitalIce\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "openapi": "openapi src -o docs/openapi.yaml"
+  }
+}

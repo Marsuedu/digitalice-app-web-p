@@ -1,0 +1,135 @@
+openapi: 3.0.3
+info:
+  title: DIGITALICE Academic API
+  version: 0.1.0
+  description: API REST base para la plataforma academica DIGITALICE.
+servers:
+  - url: http://localhost:8080/api
+paths:
+  /health:
+    get:
+      summary: Estado del servicio
+      responses:
+        "200":
+          description: Servicio disponible
+  /dashboard:
+    get:
+      summary: Obtener KPIs y gráficos analíticos de matrícula, cobranza, deuda y estados
+      responses:
+        "200":
+          description: Métricas, series de matrícula, recaudación, deuda y distribuciones para dashboard
+  /auth/login:
+    post:
+      summary: Iniciar sesion
+      responses:
+        "200":
+          description: Sesion iniciada
+  /auth/me:
+    get:
+      summary: Obtener usuario autenticado
+      responses:
+        "200":
+          description: Usuario actual
+    patch:
+      summary: Actualizar perfil del usuario autenticado
+      responses:
+        "200":
+          description: Perfil actualizado
+  /productos-academicos:
+    get:
+      summary: Listar productos academicos
+      responses:
+        "200":
+          description: Lista de productos
+    post:
+      summary: Crear producto academico con modulos
+      responses:
+        "201":
+          description: Producto creado
+  /productos-academicos/{id}/modulos:
+    post:
+      summary: Agregar modulo dinamico a un producto academico con docente opcional
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Modulo agregado
+  /productos-academicos/{id}/modulos/{module_id}:
+    patch:
+      summary: Editar nombre y docente asignado de un modulo del producto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: module_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Modulo actualizado
+    delete:
+      summary: Eliminar modulo de un producto y recalcular cantidad de modulos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: module_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Modulo eliminado
+        "409":
+          description: El modulo ya tiene inscripciones asociadas
+  /inscripciones:
+    get:
+      summary: Listar inscripciones con saldo y cuotas
+      responses:
+        "200":
+          description: Lista de inscripciones
+    post:
+      summary: Crear inscripcion y plan de pagos con cuotas configurables
+      responses:
+        "201":
+          description: Inscripcion creada
+  /inscripciones/{id}:
+    patch:
+      summary: Actualizar datos principales de una inscripcion
+      responses:
+        "200":
+          description: Inscripcion actualizada
+    delete:
+      summary: Eliminar logicamente una inscripcion, solo Admin
+      responses:
+        "200":
+          description: Inscripcion eliminada y auditada
+  /pagos/inscripcion/{inscripcion_id}:
+    get:
+      summary: Consultar estado financiero de una inscripcion
+      responses:
+        "200":
+          description: Estado financiero con datos de estudiante y pagos
+  /pagos/{id}/registrar:
+    post:
+      summary: Registrar pago de cuota con comprobante y auditoria; editar pagos registrados solo Admin
+      responses:
+        "200":
+          description: Pago registrado
+  /pagos/{id}:
+    delete:
+      summary: Eliminar logicamente un pago, solo Admin
+      responses:
+        "200":
+          description: Pago eliminado y auditado

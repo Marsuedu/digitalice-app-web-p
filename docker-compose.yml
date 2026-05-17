@@ -1,0 +1,65 @@
+services:
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "8080:80"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8080
+      FRONTEND_URL: http://localhost:5173
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_DATABASE: digitalice
+      DB_USERNAME: app_user
+      DB_PASSWORD: app_password
+      SESSION_NAME: digitalice_session
+      SESSION_SECURE: "false"
+      SESSION_SAMESITE: Lax
+      UPLOAD_MAX_SIZE_MB: 5
+    depends_on:
+      - database
+
+  database:
+    image: mariadb:11
+    restart: always
+    environment:
+      MARIADB_DATABASE: digitalice
+      MARIADB_USER: app_user
+      MARIADB_PASSWORD: app_password
+      MARIADB_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/database:/docker-entrypoint-initdb.d
+
+  swagger:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /docs/openapi.yaml
+    volumes:
+      - ./docs:/docs:ro
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
