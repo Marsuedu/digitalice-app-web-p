@@ -11,14 +11,15 @@ final class InscripcionService
 {
     public function create(array $data, string $createdBy): array
     {
+        $data = $this->withFinancialTotals($data);
         $pdo = Database::pdo();
         $pdo->beginTransaction();
 
         try {
             $inscriptionId = Uuid::v4();
             $stmt = $pdo->prepare(
-                'INSERT INTO inscripciones (id, estudiante_id, producto_id, paralelo, metodo_pago, monto_total, comprometido_pago, estado, created_by)
-                 VALUES (:id, :estudiante_id, :producto_id, :paralelo, :metodo_pago, :monto_total, :comprometido_pago, "ACTIVO", :created_by)'
+                'INSERT INTO inscripciones (id, estudiante_id, producto_id, paralelo, metodo_pago, monto_base, descuento, monto_total, comprometido_pago, estado, created_by)
+                 VALUES (:id, :estudiante_id, :producto_id, :paralelo, :metodo_pago, :monto_base, :descuento, :monto_total, :comprometido_pago, "ACTIVO", :created_by)'
             );
             $stmt->execute([
                 'id' => $inscriptionId,
@@ -26,6 +27,8 @@ final class InscripcionService
                 'producto_id' => $data['producto_id'],
                 'paralelo' => $data['paralelo'] ?? 'A',
                 'metodo_pago' => $data['metodo_pago'],
+                'monto_base' => $data['monto_base'],
+                'descuento' => $data['descuento'],
                 'monto_total' => $data['monto_total'],
                 'comprometido_pago' => !empty($data['comprometido_pago']) ? 1 : 0,
                 'created_by' => $createdBy,
@@ -118,11 +121,23 @@ final class InscripcionService
             'producto_id',
             'paralelo',
             'metodo_pago',
+            'monto_base',
+            'descuento',
             'monto_total',
             'comprometido_pago',
             'estado',
         ];
         $fields = array_intersect_key($data, array_flip($allowed));
+        if (isset($fields['producto_id']) || isset($fields['monto_base']) || isset($fields['descuento']) || isset($fields['monto_total'])) {
+            $current = $this->find($id);
+            $financialFields = $this->withFinancialTotals([
+                ...($current ?: []),
+                ...$fields,
+            ]);
+            $fields['monto_base'] = $financialFields['monto_base'];
+            $fields['descuento'] = $financialFields['descuento'];
+            $fields['monto_total'] = $financialFields['monto_total'];
+        }
         if (isset($fields['comprometido_pago'])) {
             $fields['comprometido_pago'] = !empty($fields['comprometido_pago']) ? 1 : 0;
         }
@@ -279,5 +294,44 @@ final class InscripcionService
                 'fecha_vencimiento' => $payment['fecha_vencimiento'],
             ]);
         }
+    }
+
+    private function withFinancialTotals(array $data): array
+    {
+        $productAmount = $this->productAmount((string) ($data['producto_id'] ?? ''));
+        $base = (float) ($data['monto_base'] ?? 0);
+        if ($base <= 0 && $productAmount !== null) {
+            $base = $productAmount;
+        }
+        if ($base <= 0) {
+            $base = (float) ($data['monto_total'] ?? 0);
+        }
+
+        $discount = round(max(0, (float) ($data['descuento'] ?? 0)), 2);
+        if ($discount > $base) {
+            throw new \InvalidArgumentException('El descuento no puede ser mayor al monto del curso');
+        }
+
+        $data['monto_base'] = round($base, 2);
+        $data['descuento'] = $discount;
+        $data['monto_total'] = round($base - $discount, 2);
+        if ($data['monto_total'] <= 0) {
+            throw new \InvalidArgumentException('El total de la inscripción debe ser mayor a cero');
+        }
+
+        return $data;
+    }
+
+    private function productAmount(string $productId): ?float
+    {
+        if ($productId === '') {
+            return null;
+        }
+
+        $stmt = Database::pdo()->prepare('SELECT monto_referencial FROM productos_academicos WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $productId]);
+        $amount = $stmt->fetchColumn();
+
+        return $amount === false || $amount === null ? null : (float) $amount;
     }
 }

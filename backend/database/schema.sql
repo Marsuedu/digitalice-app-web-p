@@ -113,6 +113,8 @@ CREATE TABLE IF NOT EXISTS inscripciones (
   producto_id CHAR(36) NOT NULL,
   paralelo VARCHAR(20) NOT NULL DEFAULT 'A',
   metodo_pago ENUM('AL_CONTADO', 'CUOTAS') NOT NULL,
+  monto_base DECIMAL(10,2) NULL,
+  descuento DECIMAL(10,2) NOT NULL DEFAULT 0,
   monto_total DECIMAL(10,2) NOT NULL,
   fecha_inscripcion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_completado DATE NULL,
@@ -128,6 +130,8 @@ CREATE TABLE IF NOT EXISTS inscripciones (
   CONSTRAINT fk_inscripciones_producto FOREIGN KEY (producto_id) REFERENCES productos_academicos(id),
   CONSTRAINT fk_inscripciones_usuario FOREIGN KEY (created_by) REFERENCES usuarios(id),
   CONSTRAINT fk_inscripciones_eliminado_por FOREIGN KEY (eliminado_por) REFERENCES usuarios(id),
+  CONSTRAINT chk_inscripciones_descuento CHECK (descuento >= 0),
+  CONSTRAINT chk_inscripciones_monto_total CHECK (monto_total >= 0),
   INDEX idx_inscripciones_estado (estado),
   INDEX idx_inscripciones_estudiante (estudiante_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

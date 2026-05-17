@@ -75,6 +75,8 @@ export type Enrollment = {
   paralelo: string;
   estado: string;
   metodo_pago: string;
+  monto_base?: string;
+  descuento?: string;
   monto_total: string;
   comprometido_pago: string;
   saldo_pendiente: string;

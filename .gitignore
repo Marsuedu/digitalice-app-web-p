@@ -8,3 +8,4 @@ frontend/dist/
 coverage/
 *.log
 .phpunit.result.cache
+env.token

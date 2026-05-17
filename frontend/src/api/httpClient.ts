@@ -53,6 +53,8 @@ const fieldLabels: Record<string, string> = {
   producto_id: 'producto académico',
   metodo_pago: 'método de pago',
   monto_total: 'monto total',
+  monto_base: 'monto del curso',
+  descuento: 'descuento',
   cantidad_cuotas: 'cantidad de cuotas',
   comprometido_pago: 'compromiso de pago',
   fecha_pago: 'fecha de pago',

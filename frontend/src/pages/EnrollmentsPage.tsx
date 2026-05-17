@@ -25,6 +25,8 @@ const initialForm = {
   producto_id: '',
   paralelo: 'A',
   metodo_pago: 'AL_CONTADO',
+  monto_base: '',
+  descuento: '0',
   monto_total: '',
   cantidad_cuotas: '3',
   comprometido_pago: false,
@@ -69,6 +71,8 @@ export function EnrollmentsPage({ onOpenPayments, user }: Props) {
       producto_id: enrollment.producto_id,
       paralelo: enrollment.paralelo || 'A',
       metodo_pago: enrollment.metodo_pago,
+      monto_base: String(enrollment.monto_base ?? enrollment.monto_total),
+      descuento: String(enrollment.descuento ?? '0'),
       monto_total: String(enrollment.monto_total),
       cantidad_cuotas: String(enrollment.cuotas_total || '1'),
       comprometido_pago: Boolean(Number(enrollment.comprometido_pago)),
@@ -136,6 +140,8 @@ export function EnrollmentsPage({ onOpenPayments, user }: Props) {
     try {
       await enrollmentsApi.create({
         ...form,
+        monto_base: Number(form.monto_base),
+        descuento: Number(form.descuento || 0),
         monto_total: Number(form.monto_total),
         cantidad_cuotas: form.metodo_pago === 'CUOTAS' ? customInstallments.length : 1,
         comprometido_pago: form.metodo_pago === 'CUOTAS' ? form.comprometido_pago : false,
@@ -164,6 +170,8 @@ export function EnrollmentsPage({ onOpenPayments, user }: Props) {
         producto_id: form.producto_id,
         paralelo: form.paralelo,
         metodo_pago: form.metodo_pago,
+        monto_base: Number(form.monto_base),
+        descuento: Number(form.descuento || 0),
         monto_total: Number(form.monto_total),
         comprometido_pago: form.metodo_pago === 'CUOTAS' ? form.comprometido_pago : false,
       });
@@ -192,6 +200,21 @@ export function EnrollmentsPage({ onOpenPayments, user }: Props) {
 
   function updateInstallment(index: number, patch: Partial<InstallmentDraft>) {
     setInstallments((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
+  }
+
+  function selectProduct(productId: string) {
+    const product = (products.data ?? []).find((item) => item.id === productId);
+    const amount = Number(product?.monto_referencial ?? 0);
+    setForm((current) => withCalculatedTotal({
+      ...current,
+      producto_id: productId,
+      monto_base: amount > 0 ? amount.toFixed(2) : current.monto_base,
+      descuento: '0',
+    }));
+  }
+
+  function updateFinancial(patch: Partial<typeof form>) {
+    setForm((current) => withCalculatedTotal({ ...current, ...patch }));
   }
 
   return (
@@ -268,7 +291,7 @@ export function EnrollmentsPage({ onOpenPayments, user }: Props) {
             label="Producto"
             value={form.producto_id}
             products={products.data ?? []}
-            onChange={(producto_id) => setForm({ ...form, producto_id })}
+            onChange={selectProduct}
           />
           <Field label="Paralelo" value={form.paralelo} onChange={(event) => setForm({ ...form, paralelo: event.target.value })} />
           <SelectField
@@ -280,7 +303,9 @@ export function EnrollmentsPage({ onOpenPayments, user }: Props) {
               { value: 'CUOTAS', label: 'Cuotas' },
             ]}
           />
-          <Field label="Monto total" type="number" min="1" value={form.monto_total} onChange={(event) => setForm({ ...form, monto_total: event.target.value })} />
+          <Field label="Monto curso" type="number" min="0" value={form.monto_base} onChange={(event) => updateFinancial({ monto_base: event.target.value })} />
+          <Field label="Descuento" type="number" min="0" value={form.descuento} onChange={(event) => updateFinancial({ descuento: event.target.value })} />
+          <Field label="Total a pagar" type="number" min="1" value={form.monto_total} readOnly onChange={() => undefined} />
           {form.metodo_pago === 'CUOTAS' && !editing ? (
             <Field label="Cantidad de cuotas" type="number" min="1" value={form.cantidad_cuotas} onChange={(event) => setForm({ ...form, cantidad_cuotas: event.target.value })} />
           ) : null}
@@ -443,7 +468,7 @@ function ProductPicker({ label, value, products, onChange }: ProductPickerProps)
           {filteredProducts.map((product) => (
             <button type="button" key={product.id} onClick={() => selectProduct(product.id)}>
               <strong>{product.codigo} · {product.nombre}</strong>
-              <small>{product.tipo} · {product.institucion}</small>
+              <small>{product.tipo} · {product.institucion} · {formatMoney(product.monto_referencial)}</small>
             </button>
           ))}
           {filteredProducts.length === 0 ? <p className="muted">No se encontraron productos.</p> : null}
@@ -451,4 +476,20 @@ function ProductPicker({ label, value, products, onChange }: ProductPickerProps)
       ) : null}
     </div>
   );
+}
+
+function withCalculatedTotal<T extends { monto_base: string; descuento: string; monto_total: string }>(form: T): T {
+  const base = Number(form.monto_base || 0);
+  const discount = Math.max(0, Number(form.descuento || 0));
+  const total = Math.max(0, base - discount);
+  return {
+    ...form,
+    descuento: discount.toString(),
+    monto_total: total > 0 ? total.toFixed(2) : '',
+  };
+}
+
+function formatMoney(value?: string | number | null) {
+  const amount = Number(value ?? 0);
+  return amount > 0 ? amount.toFixed(2) : 'Sin monto';
 }

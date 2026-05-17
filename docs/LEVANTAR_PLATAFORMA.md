@@ -137,6 +137,12 @@ Si ya tenias la base creada y necesitas permitir eliminación lógica de módulo
 docker compose exec -T database mariadb -u app_user -papp_password digitalice < backend/database/migrations/20260517_soft_delete_product_modules.sql
 ```
 
+Si ya tenias la base creada y necesitas guardar monto base, descuento y total de inscripción:
+
+```bash
+docker compose exec -T database mariadb -u app_user -papp_password digitalice < backend/database/migrations/20260517_enrollment_discount.sql
+```
+
 Ejecutar manualmente el schema:
 
 ```bash

@@ -275,7 +275,11 @@ export function PaymentsPage({ initialEnrollmentId = '', user }: Props) {
                 {data.pagos.map((payment) => (
                   <tr key={payment.id}>
                     <td>{payment.numero_cuota}</td>
-                    <td>{payment.monto}</td>
+                    <td>
+                      <strong>{Number(payment.monto).toFixed(2)}</strong>
+                      {payment.estado === 'PAGADO' && payment.monto_pagado ? <small className="table-subtitle">Pagado: {Number(payment.monto_pagado).toFixed(2)}</small> : null}
+                      {payment.notas ? <small className="table-subtitle">{payment.notas}</small> : null}
+                    </td>
                     <td>{payment.fecha_vencimiento}</td>
                     <td><span className="status">{payment.estado}</span></td>
                     <td>{payment.codigo_comprobante || '-'}</td>
@@ -319,6 +323,11 @@ export function PaymentsPage({ initialEnrollmentId = '', user }: Props) {
         <form className="form-grid two-columns" onSubmit={registerPayment}>
           <Field label="Fecha de pago" type="date" value={paymentForm.fecha_pago} onChange={(event) => setPaymentForm({ ...paymentForm, fecha_pago: event.target.value })} />
           <Field label="Monto pagado" type="number" min="1" value={paymentForm.monto_pagado} onChange={(event) => setPaymentForm({ ...paymentForm, monto_pagado: event.target.value })} />
+          {selectedPayment ? (
+            <p className="muted payment-balance-hint">
+              Cuota pendiente: {Number(selectedPayment.monto).toFixed(2)}. Si registras un monto menor, el sistema generará una nueva cuota con el saldo.
+            </p>
+          ) : null}
           <SelectField
             label="Entidad facturadora"
             value={paymentForm.entidad_facturadora}

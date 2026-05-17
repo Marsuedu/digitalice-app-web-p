@@ -13,6 +13,43 @@ api.tudominio.com  -> backend PHP/Slim
 
 Esta separacion simplifica CORS, cookies, seguridad y mantenimiento.
 
+Tambien se puede usar un solo dominio:
+
+```text
+https://digitalice.atokongo.com      -> frontend React compilado
+https://digitalice.atokongo.com/api  -> backend PHP/Slim
+```
+
+Para tu ruta actual de Hostinger:
+
+```text
+Document root publico:
+/home/u349685578/domains/atokongo.com/public_html/digitalice
+```
+
+La recomendacion es clonar el repositorio fuera de `public_html` para no exponer codigo interno:
+
+```bash
+cd /home/u349685578/domains/atokongo.com
+git clone https://github.com/juansalinasponce/digitalice-app-web.git digitalice-app-web
+```
+
+Luego publicar solo archivos publicos:
+
+```text
+/home/u349685578/domains/atokongo.com/public_html/digitalice/      -> contenido de frontend/dist
+/home/u349685578/domains/atokongo.com/public_html/digitalice/api/  -> front controller PHP de la API
+/home/u349685578/domains/atokongo.com/digitalice-app-web/backend/  -> backend privado
+```
+
+Si Hostinger solo te permite clonar dentro de:
+
+```text
+/home/u349685578/domains/atokongo.com/public_html/digitalice
+```
+
+no dejes el repositorio completo como sitio publico. Usa esa ruta solo temporalmente para clonar/compilar o protege carpetas internas con `.htaccess`. Lo mas seguro es mantener `backend/`, `.env`, `database/`, `src/` y `vendor/` fuera de la carpeta publica.
+
 ## 2. Cambios Antes De Produccion
 
 1. Crear variables reales desde los ejemplos:
@@ -50,6 +87,28 @@ SESSION_SAMESITE=Lax
 SESSION_SECURE=true
 ```
 
+Para tu caso con un solo dominio:
+
+```env
+APP_URL=https://digitalice.atokongo.com
+FRONTEND_URL=https://digitalice.atokongo.com
+SESSION_SAMESITE=Lax
+SESSION_SECURE=true
+```
+
+Y en frontend:
+
+```env
+VITE_API_BASE_URL=https://digitalice.atokongo.com/api
+VITE_BASE_PATH=/
+```
+
+Si en vez del subdominio usaras `https://atokongo.com/digitalice`, entonces `VITE_BASE_PATH` debe ser:
+
+```env
+VITE_BASE_PATH=/digitalice/
+```
+
 ## 3. Base De Datos
 
 1. En hPanel, crear una base MySQL.
@@ -78,6 +137,7 @@ backend/database/migrations/20260517_soft_delete_enrollments.sql
 backend/database/migrations/20260517_product_module_teacher.sql
 backend/database/migrations/20260517_product_status.sql
 backend/database/migrations/20260517_soft_delete_product_modules.sql
+backend/database/migrations/20260517_enrollment_discount.sql
 ```
 
 ## 4. Frontend
@@ -130,6 +190,107 @@ https://api.tudominio.com/api/health
 ```
 
 Si Hostinger no permite apuntar el document root a `backend/public`, crea un subdominio exclusivo para API y evita exponer carpetas internas como `src`, `database`, `vendor` y `.env`.
+
+## 5.1. Opcion Un Solo Dominio: `digitalice.atokongo.com/api`
+
+Estructura recomendada:
+
+```text
+/home/u349685578/domains/atokongo.com/digitalice-app-web
+├── backend
+└── frontend
+
+/home/u349685578/domains/atokongo.com/public_html/digitalice
+├── index.html
+├── assets/
+└── api/
+    ├── index.php
+    └── .htaccess
+```
+
+Compilar frontend:
+
+```bash
+cd /home/u349685578/domains/atokongo.com/digitalice-app-web/frontend
+npm install
+VITE_API_BASE_URL=https://digitalice.atokongo.com/api VITE_BASE_PATH=/ npm run build
+```
+
+Copiar frontend compilado:
+
+```bash
+cp -R dist/* /home/u349685578/domains/atokongo.com/public_html/digitalice/
+```
+
+Crear `/home/u349685578/domains/atokongo.com/public_html/digitalice/.htaccess`:
+
+```apache
+RewriteEngine On
+
+RewriteCond %{REQUEST_URI} !^/api
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+```
+
+Crear carpeta API publica:
+
+```bash
+mkdir -p /home/u349685578/domains/atokongo.com/public_html/digitalice/api
+```
+
+Crear `/home/u349685578/domains/atokongo.com/public_html/digitalice/api/.htaccess`:
+
+```apache
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+```
+
+Crear `/home/u349685578/domains/atokongo.com/public_html/digitalice/api/index.php` apuntando al backend privado:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use DigitalIce\Config\AppConfig;
+use DigitalIce\Middlewares\CorsMiddleware;
+use DigitalIce\Middlewares\JsonBodyMiddleware;
+use Slim\Factory\AppFactory;
+
+$backendRoot = '/home/u349685578/domains/atokongo.com/digitalice-app-web/backend';
+
+require $backendRoot . '/vendor/autoload.php';
+
+AppConfig::loadEnv($backendRoot . '/.env');
+AppConfig::startSession();
+
+$app = AppFactory::create();
+$app->addRoutingMiddleware();
+$app->add(new CorsMiddleware());
+$app->add(new JsonBodyMiddleware());
+$app->addErrorMiddleware(AppConfig::debug(), true, true);
+
+(require $backendRoot . '/src/routes.php')($app);
+
+$app->run();
+```
+
+Instalar dependencias backend:
+
+```bash
+cd /home/u349685578/domains/atokongo.com/digitalice-app-web/backend
+composer install --no-dev --optimize-autoloader
+```
+
+Probar:
+
+```text
+https://digitalice.atokongo.com/api/health
+```
 
 ## 6. Despliegue Con Git En Hostinger
 
