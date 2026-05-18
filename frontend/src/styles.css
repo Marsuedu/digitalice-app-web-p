@@ -909,6 +909,10 @@ th {
   width: min(920px, 100%);
 }
 
+.modal-xl {
+  width: min(1180px, calc(100vw - 28px));
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -952,7 +956,7 @@ th {
 
 .module-item {
   display: grid;
-  grid-template-columns: 42px minmax(220px, 1fr) minmax(170px, auto) auto;
+  grid-template-columns: 42px minmax(280px, 1fr) minmax(220px, auto) auto;
   gap: 12px;
   align-items: center;
   border: 1px solid #dbe3df;
@@ -981,15 +985,24 @@ th {
 }
 
 .module-edit-form {
-  grid-column: 2 / -1;
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(320px, 1.35fr) minmax(240px, 0.85fr);
-  gap: 12px;
+  grid-template-columns: 42px minmax(520px, 1fr) minmax(300px, 360px);
+  gap: 14px 18px;
   align-items: end;
+  width: 100%;
+}
+
+.module-edit-form::before {
+  content: "";
 }
 
 .module-edit-form .row-actions {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
+}
+
+.module-edit-form .searchable-select-panel {
+  max-height: 220px;
 }
 
 .searchable-select {
@@ -1175,6 +1188,10 @@ th {
   .module-edit-form {
     grid-column: 1 / -1;
     grid-template-columns: 1fr;
+  }
+
+  .module-edit-form::before {
+    display: none;
   }
 
   .bar-row {

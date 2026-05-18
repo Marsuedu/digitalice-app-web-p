@@ -324,7 +324,7 @@ export function ProductsPage() {
         </form>
       </Modal>
 
-      <Modal title="Módulos del producto" open={modal === 'modules'} onClose={() => setModal(null)} size="lg">
+      <Modal title="Módulos del producto" open={modal === 'modules'} onClose={() => setModal(null)} size="xl">
         <div className="module-manager">
           <div>
             <h3>{selected?.nombre}</h3>

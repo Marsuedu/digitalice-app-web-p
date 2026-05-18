@@ -5,7 +5,7 @@ type Props = PropsWithChildren<{
   title: string;
   open: boolean;
   onClose: () => void;
-  size?: 'md' | 'lg';
+  size?: 'md' | 'lg' | 'xl';
 }>;
 
 export function Modal({ title, open, onClose, size = 'md', children }: Props) {
@@ -25,4 +25,3 @@ export function Modal({ title, open, onClose, size = 'md', children }: Props) {
     </div>
   );
 }
-
