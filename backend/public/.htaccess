@@ -7,3 +7,15 @@ RewriteRule ^ index.php [QSA,L]
 <FilesMatch "^\.">
   Require all denied
 </FilesMatch>
+
+
+
+RewriteEngine On
+
+# Permitir preflight OPTIONS
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [END]
+
+# Slim routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
