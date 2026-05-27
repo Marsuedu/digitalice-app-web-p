@@ -16,7 +16,7 @@ final class CorsMiddleware implements MiddlewareInterface
     {
         $origin = (string) AppConfig::get(
             'FRONTEND_URL',
-            'https://digitalice-app-web-p2.pages.dev'
+            'f52d69a1.digitalice-app-web-p2.pages.dev'
         );
 
         if ($request->getMethod() === 'OPTIONS') {
